@@ -36,11 +36,25 @@ export default async function handler(request) {
   try {
     const proxyBaseUrl = `${url.origin}/api/proxy`;
 
-    // Headers para la petición al servidor IPTV
+    // Extraer el origin del servidor IPTV para headers Referer/Origin
+    let targetOrigin;
+    try {
+      targetOrigin = new URL(targetUrl).origin;
+    } catch {
+      targetOrigin = '';
+    }
+
+    // Headers que simulan una petición real de navegador
+    // Muchos servidores IPTV/Xtream verifican Referer y User-Agent
     const fetchHeaders = {
       'User-Agent':
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
       Accept: '*/*',
+      'Accept-Language': 'en-US,en;q=0.9,es;q=0.8',
+      'Accept-Encoding': 'gzip, deflate',
+      Connection: 'keep-alive',
+      Referer: targetOrigin + '/',
+      Origin: targetOrigin,
     };
 
     // Reenviar header Range si existe (para seeks)
@@ -49,7 +63,33 @@ export default async function handler(request) {
       fetchHeaders['Range'] = rangeHeader;
     }
 
-    const response = await fetch(targetUrl, { headers: fetchHeaders });
+    let response = await fetch(targetUrl, {
+      headers: fetchHeaders,
+      redirect: 'follow',
+    });
+
+    // Si el servidor devuelve 403, reintentar sin Referer/Origin
+    // (algunos servidores rechazan Referer de distinto dominio)
+    if (response.status === 403) {
+      const retryHeaders = { ...fetchHeaders };
+      delete retryHeaders['Referer'];
+      delete retryHeaders['Origin'];
+      response = await fetch(targetUrl, {
+        headers: retryHeaders,
+        redirect: 'follow',
+      });
+    }
+
+    // Si sigue siendo 403, intentar con headers mínimos
+    if (response.status === 403) {
+      response = await fetch(targetUrl, {
+        headers: {
+          'User-Agent': 'VLC/3.0.20 LibVLC/3.0.20',
+          Accept: '*/*',
+        },
+        redirect: 'follow',
+      });
+    }
 
     const contentType = response.headers.get('content-type') || '';
     const finalUrl = response.url; // URL final después de redirects
@@ -135,7 +175,7 @@ export default async function handler(request) {
       headers: responseHeaders,
     });
   } catch (error) {
-    console.error('[PROXY] Error:', error.message);
+    console.error('[PROXY] Error:', error.message, '| URL:', targetUrl);
     return new Response(JSON.stringify({ error: 'Proxy Error', details: error.message }), {
       status: 502,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
