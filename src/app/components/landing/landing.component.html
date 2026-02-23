@@ -1,0 +1,255 @@
+<div class="landing-page">
+  <!-- Animated Background -->
+  <div class="bg-animation">
+    <div class="bg-gradient"></div>
+    <div class="bg-grid"></div>
+    <div class="floating-orb orb-1"></div>
+    <div class="floating-orb orb-2"></div>
+    <div class="floating-orb orb-3"></div>
+  </div>
+
+  <!-- Navigation -->
+  <nav class="landing-nav">
+    <div class="nav-content">
+      <div class="nav-brand">
+        <div class="brand-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="5 3 19 12 5 21 5 3" fill="currentColor" stroke="none"/>
+          </svg>
+        </div>
+        <span class="brand-name">Vantix<span class="brand-accent">IPTV</span></span>
+      </div>
+      <div class="nav-links">
+        <a href="#features" class="nav-link">Características</a>
+        <a href="#how-it-works" class="nav-link">Cómo funciona</a>
+        <button (click)="goToLogin()" class="nav-cta">Comenzar</button>
+      </div>
+      <!-- Mobile menu button -->
+      <button class="mobile-menu-btn" (click)="toggleMobileMenu()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          @if (!showMobileMenu) {
+            <path d="M4 6h16M4 12h16M4 18h16"/>
+          } @else {
+            <path d="M6 18L18 6M6 6l12 12"/>
+          }
+        </svg>
+      </button>
+    </div>
+    <!-- Mobile menu -->
+    @if (showMobileMenu) {
+      <div class="mobile-menu">
+        <a href="#features" class="mobile-link" (click)="showMobileMenu = false">Características</a>
+        <a href="#how-it-works" class="mobile-link" (click)="showMobileMenu = false">Cómo funciona</a>
+        <button (click)="goToLogin(); showMobileMenu = false" class="nav-cta mobile-cta">Comenzar</button>
+      </div>
+    }
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="hero-section">
+    <div class="hero-content">
+      <div class="hero-badge">
+        <span class="badge-dot"></span>
+        La nueva era del streaming
+      </div>
+      <h1 class="hero-title">
+        Tu entretenimiento<br>
+        <span class="gradient-text">sin límites</span>
+      </h1>
+      <p class="hero-subtitle">
+        La plataforma IPTV más potente y elegante. Gestiona tus listas M3U y Xtream Codes 
+        con una experiencia de usuario premium que ninguna otra app te ofrece.
+      </p>
+      <div class="hero-actions">
+        <button (click)="goToLogin()" class="btn-primary btn-lg">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="btn-icon">
+            <polygon points="5 3 19 12 5 21 5 3" fill="currentColor" stroke="none"/>
+          </svg>
+          Empezar ahora
+        </button>
+        <a href="#features" class="btn-ghost btn-lg">
+          Descubrir más
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="btn-icon-right">
+            <path d="M19 14l-7 7m0 0l-7-7m7 7V3"/>
+          </svg>
+        </a>
+      </div>
+      <div class="hero-stats">
+        <div class="stat">
+          <span class="stat-number">∞</span>
+          <span class="stat-label">Canales</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat">
+          <span class="stat-number">HD</span>
+          <span class="stat-label">Calidad</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat">
+          <span class="stat-number">24/7</span>
+          <span class="stat-label">Disponible</span>
+        </div>
+      </div>
+    </div>
+    <div class="hero-visual">
+      <div class="hero-mockup">
+        <div class="mockup-screen">
+          <div class="mockup-header">
+            <div class="mockup-dots">
+              <span></span><span></span><span></span>
+            </div>
+          </div>
+          <div class="mockup-content">
+            <div class="mockup-player"></div>
+            <div class="mockup-channels">
+              <div class="mockup-channel"></div>
+              <div class="mockup-channel"></div>
+              <div class="mockup-channel"></div>
+              <div class="mockup-channel pulse"></div>
+              <div class="mockup-channel"></div>
+              <div class="mockup-channel"></div>
+            </div>
+          </div>
+        </div>
+        <div class="mockup-glow"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section id="features" class="features-section">
+    <div class="section-container">
+      <div class="section-header">
+        <span class="section-tag">Características</span>
+        <h2 class="section-title">Todo lo que necesitas</h2>
+        <p class="section-subtitle">Diseñado para ofrecer la mejor experiencia de streaming IPTV</p>
+      </div>
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon icon-purple">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+            </svg>
+          </div>
+          <h3>Streaming HD</h3>
+          <p>Reproduce tus canales en alta definición con soporte HLS nativo y buffering inteligente</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon icon-blue">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"/>
+            </svg>
+          </div>
+          <h3>Listas guardadas</h3>
+          <p>Guarda múltiples playlists M3U y Xtream Codes. Se mantienen incluso al cerrar el navegador</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon icon-pink">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+            </svg>
+          </div>
+          <h3>100% Responsive</h3>
+          <p>Experiencia perfecta en cualquier dispositivo: móvil, tablet, escritorio o TV</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon icon-green">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/>
+            </svg>
+          </div>
+          <h3>Favoritos</h3>
+          <p>Marca tus canales favoritos y accede a ellos instantáneamente desde cualquier lista</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon icon-orange">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+            </svg>
+          </div>
+          <h3>Búsqueda inteligente</h3>
+          <p>Encuentra cualquier canal al instante con nuestro potente motor de búsqueda en tiempo real</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon icon-cyan">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+            </svg>
+          </div>
+          <h3>Privacidad total</h3>
+          <p>Tus datos se guardan localmente en tu navegador. No almacenamos nada en servidores externos</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- How It Works -->
+  <section id="how-it-works" class="how-section">
+    <div class="section-container">
+      <div class="section-header">
+        <span class="section-tag">Cómo funciona</span>
+        <h2 class="section-title">3 pasos y listo</h2>
+        <p class="section-subtitle">Configurar VantixIPTV es increíblemente sencillo</p>
+      </div>
+      <div class="steps-grid">
+        <div class="step-card">
+          <div class="step-number">01</div>
+          <h3>Ingresa tu lista</h3>
+          <p>Pega la URL de tu lista M3U o introduce tus credenciales de Xtream Codes</p>
+        </div>
+        <div class="step-connector">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M5 12h14M12 5l7 7-7 7"/>
+          </svg>
+        </div>
+        <div class="step-card">
+          <div class="step-number">02</div>
+          <h3>Guárdala</h3>
+          <p>Tu lista se guarda automáticamente para que no tengas que ingresarla cada vez</p>
+        </div>
+        <div class="step-connector">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M5 12h14M12 5l7 7-7 7"/>
+          </svg>
+        </div>
+        <div class="step-card">
+          <div class="step-number">03</div>
+          <h3>Disfruta</h3>
+          <p>Explora miles de canales en HD con la mejor interfaz del mercado</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Section -->
+  <section class="cta-section">
+    <div class="section-container">
+      <div class="cta-card">
+        <div class="cta-glow"></div>
+        <h2 class="cta-title">¿Listo para empezar?</h2>
+        <p class="cta-subtitle">Gestiona tus listas IPTV y disfruta de tus canales favoritos ahora mismo</p>
+        <button (click)="goToLogin()" class="btn-primary btn-lg">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="btn-icon">
+            <path d="M13 10V3L4 14h7v7l9-11h-7z"/>
+          </svg>
+          Ir a mis listas
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="landing-footer">
+    <div class="footer-content">
+      <div class="footer-brand">
+        <div class="brand-icon small">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="5 3 19 12 5 21 5 3" fill="currentColor" stroke="none"/>
+          </svg>
+        </div>
+        <span>VantixIPTV</span>
+      </div>
+      <p class="footer-copy">Hecho con pasión para la mejor experiencia IPTV</p>
+    </div>
+  </footer>
+</div>

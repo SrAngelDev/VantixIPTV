@@ -1,0 +1,55 @@
+# ================================================
+# VantixIPTV - Netlify Configuration
+# ================================================
+
+[build]
+  # Comando de build de Angular
+  command = "npm run build"
+  # Directorio de salida de Angular (application builder)
+  publish = "dist/VantixIPTV/browser"
+  # Directorio de funciones serverless
+  functions = "netlify/functions"
+
+[build.environment]
+  NODE_VERSION = "20"
+  NPM_FLAGS = "--legacy-peer-deps"
+
+# Función proxy: timeout extendido para streams grandes
+[functions]
+  node_bundler = "esbuild"
+
+# ================================================
+# Redirects
+# ================================================
+
+# API Proxy shortcut: /api/proxy → función serverless
+[[redirects]]
+  from = "/api/proxy"
+  to = "/.netlify/functions/proxy"
+  status = 200
+
+# SPA fallback: todas las rutas → index.html (Angular Router)
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# ================================================
+# Headers de seguridad y rendimiento
+# ================================================
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+
+[[headers]]
+  for = "/*.js"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/*.css"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"

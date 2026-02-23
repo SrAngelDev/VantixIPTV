@@ -1,0 +1,100 @@
+<div class="video-container">
+  <!-- Video Element -->
+  <video 
+    #videoElement 
+    class="video-js vjs-big-play-centered vjs-16-9"
+    playsinline>
+  </video>
+
+  <!-- Loading Overlay -->
+  @if (isLoading()) {
+    <div class="loading-overlay">
+      <div class="spinner-container">
+        <div class="spinner"></div>
+        <p>Cargando stream...</p>
+      </div>
+    </div>
+  }
+
+  <!-- Error Message -->
+  @if (error()) {
+    <div class="error-overlay">
+      <div class="error-content">
+        <svg class="error-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+        </svg>
+        <h3>Error de Reproducción</h3>
+        <p>{{ error() }}</p>
+        @if (channel) {
+          <button (click)="loadChannel(channel)" class="retry-btn">
+            Reintentar
+          </button>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- Audio Track Selector -->
+  @if (hasMultipleAudioTracks() && !error()) {
+    <div class="audio-track-panel" [class.open]="showAudioMenu()">
+      <!-- Toggle Button -->
+      <button class="audio-toggle-btn" (click)="toggleAudioMenu()" title="Cambiar audio">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+          <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+          <line x1="12" y1="19" x2="12" y2="23"/>
+          <line x1="8" y1="23" x2="16" y2="23"/>
+        </svg>
+        <span class="audio-badge">{{ audioTracks().length }}</span>
+      </button>
+
+      <!-- Audio Menu -->
+      @if (showAudioMenu()) {
+        <div class="audio-menu" (mouseleave)="closeAudioMenu()">
+          <div class="audio-menu-header">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+            </svg>
+            <span>Pistas de Audio</span>
+          </div>
+          <div class="audio-menu-list">
+            @for (track of audioTracks(); track track.id) {
+              <button 
+                class="audio-track-item" 
+                [class.active]="track.enabled"
+                (click)="selectAudioTrack(track.id)">
+                <span class="track-indicator">
+                  @if (track.enabled) {
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                    </svg>
+                  } @else {
+                    <span class="track-dot"></span>
+                  }
+                </span>
+                <span class="track-label">{{ track.label }}</span>
+                @if (track.language) {
+                  <span class="track-lang">{{ track.language.toUpperCase() }}</span>
+                }
+              </button>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- No Channel State -->
+  @if (!channel && !error()) {
+    <div class="empty-state">
+      <div class="empty-content">
+        <svg class="empty-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+        </svg>
+        <h3>Vantix TV</h3>
+        <p>Selecciona un canal para comenzar</p>
+      </div>
+    </div>
+  }
+</div>

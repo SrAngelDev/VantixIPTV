@@ -1,0 +1,230 @@
+<div class="login-page">
+  <!-- Animated Background -->
+  <div class="bg-animation">
+    <div class="bg-gradient"></div>
+    <div class="bg-grid"></div>
+    <div class="floating-orb orb-1"></div>
+    <div class="floating-orb orb-2"></div>
+  </div>
+
+  <!-- Top Bar -->
+  <header class="login-header">
+    <div class="header-content">
+      <a class="nav-brand" (click)="goToLanding()">
+        <div class="brand-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="5 3 19 12 5 21 5 3" fill="currentColor" stroke="none"/>
+          </svg>
+        </div>
+        <span class="brand-name">Vantix<span class="brand-accent">IPTV</span></span>
+      </a>
+      <button class="back-btn" (click)="goToLanding()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M19 12H5m0 0l7 7m-7-7l7-7"/>
+        </svg>
+        Volver al inicio
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="login-main">
+    <div class="login-container">
+      <!-- Page Header -->
+      <div class="page-header">
+        <h1 class="page-title">Gestiona tus <span class="gradient-text">listas IPTV</span></h1>
+        <p class="page-subtitle">Conecta una nueva lista o selecciona una guardada para empezar a ver</p>
+      </div>
+
+      <div class="login-layout">
+        <!-- Saved Playlists Column -->
+        <div class="saved-playlists-panel">
+          <h2 class="panel-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="panel-icon">
+              <path d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+            </svg>
+            Mis Listas
+          </h2>
+          
+          @if (savedPlaylists().length === 0) {
+            <div class="empty-playlists">
+              <div class="empty-icon-wrapper">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <path d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+                </svg>
+              </div>
+              <p class="empty-title">No hay listas guardadas</p>
+              <p class="empty-desc">Conecta tu primera lista y se guardará automáticamente</p>
+            </div>
+          } @else {
+            <div class="playlists-list">
+              @for (playlist of savedPlaylists(); track playlist.id) {
+                <div class="playlist-item" [class.active]="selectedPlaylistId === playlist.id" [class.loading]="selectedPlaylistId === playlist.id && isLoading">
+                  <button class="playlist-btn" (click)="loadSavedPlaylist(playlist)" [disabled]="isLoading">
+                    <span class="playlist-icon">{{ playlist.icon || '📋' }}</span>
+                    <div class="playlist-info">
+                      <span class="playlist-name">{{ playlist.name }}</span>
+                      <span class="playlist-meta">
+                        {{ playlist.credentials.type === 'm3u' ? 'M3U' : 'Xtream' }}
+                        @if (playlist.channelCount) {
+                          · {{ playlist.channelCount }} canales
+                        }
+                      </span>
+                    </div>
+                    @if (selectedPlaylistId === playlist.id && isLoading) {
+                      <div class="playlist-spinner"></div>
+                    }
+                  </button>
+                  <button class="playlist-delete" (click)="deletePlaylist(playlist.id, $event)" title="Eliminar lista">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                    </svg>
+                  </button>
+                </div>
+              }
+            </div>
+          }
+        </div>
+
+        <!-- Connect Form Column -->
+        <div class="connect-form-panel">
+          <div class="form-header">
+            <h2 class="form-title">Conectar nueva lista</h2>
+            <p class="form-subtitle">Añade una lista M3U o credenciales Xtream Codes</p>
+          </div>
+
+          <!-- Source Type Selector -->
+          <div class="source-selector">
+            <button 
+              type="button"
+              (click)="selectSourceType('m3u')"
+              [class.active]="sourceType === 'm3u'"
+              class="source-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
+              </svg>
+              M3U URL
+            </button>
+            <button 
+              type="button"
+              (click)="selectSourceType('xtream')"
+              [class.active]="sourceType === 'xtream'"
+              class="source-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"/>
+              </svg>
+              Xtream Codes
+            </button>
+          </div>
+
+          <!-- Form -->
+          <form (ngSubmit)="onSubmit()" class="connect-form">
+            <!-- Playlist Name -->
+            <div class="form-group">
+              <label class="form-label">Nombre de la lista</label>
+              <input 
+                type="text"
+                [(ngModel)]="playlistName"
+                name="playlistName"
+                placeholder="Ej: Mi lista principal"
+                class="form-input">
+            </div>
+
+            @if (sourceType === 'm3u') {
+              <div class="form-group">
+                <label class="form-label">URL de Lista M3U</label>
+                <input 
+                  type="url"
+                  [(ngModel)]="m3uUrl"
+                  name="m3uUrl"
+                  placeholder="https://ejemplo.com/lista.m3u8"
+                  class="form-input"
+                  required>
+              </div>
+            }
+
+            @if (sourceType === 'xtream') {
+              <div class="form-group">
+                <label class="form-label">Host del Servidor</label>
+                <input 
+                  type="url"
+                  [(ngModel)]="xtreamHost"
+                  name="xtreamHost"
+                  placeholder="http://ejemplo.com:8080"
+                  class="form-input"
+                  required>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">Usuario</label>
+                  <input 
+                    type="text"
+                    [(ngModel)]="xtreamUsername"
+                    name="xtreamUsername"
+                    placeholder="tu_usuario"
+                    class="form-input"
+                    required>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Contraseña</label>
+                  <div class="input-with-icon">
+                    <input 
+                      [type]="showPassword ? 'text' : 'password'"
+                      [(ngModel)]="xtreamPassword"
+                      name="xtreamPassword"
+                      placeholder="••••••••"
+                      class="form-input"
+                      required>
+                    <button type="button" (click)="togglePasswordVisibility()" class="input-icon-btn">
+                      @if (showPassword) {
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/>
+                        </svg>
+                      } @else {
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                          <path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                        </svg>
+                      }
+                    </button>
+                  </div>
+                </div>
+              </div>
+            }
+
+            <!-- Error -->
+            @if (errorMessage) {
+              <div class="form-error">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                {{ errorMessage }}
+              </div>
+            }
+
+            <!-- Submit -->
+            <button type="submit" [disabled]="isLoading" class="btn-primary btn-block">
+              @if (isLoading && !selectedPlaylistId) {
+                <div class="spinner-sm"></div>
+                Conectando...
+              } @else {
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="btn-icon">
+                  <path d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                </svg>
+                Conectar y guardar
+              }
+            </button>
+          </form>
+
+          <!-- CORS Note -->
+          <div class="cors-note">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            <span>Si tienes problemas de conexión (CORS), el proxy local se activará automáticamente.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>

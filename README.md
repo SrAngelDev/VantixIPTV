@@ -1,52 +1,73 @@
-# VantixIPTV
+# 📺 VantixIPTV - Reproductor IPTV Profesional
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.0.2.
+Una aplicación web moderna para reproducir canales IPTV con soporte para listas M3U y Xtream Codes API.
 
-## Development server
+![Angular](https://img.shields.io/badge/Angular-21-red)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind-4-blue)
+![Video.js](https://img.shields.io/badge/Video.js-Latest-green)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue)
 
-To start a local development server, run:
+## ✨ Características
 
-```bash
-ng serve
-```
+### 🔐 Autenticación Dual
+- **Listas M3U/M3U8**: Ingresa una URL directa a tu playlist
+- **Xtream Codes API**: Conexión mediante Host, Usuario y Contraseña
+- **Persistencia de sesión**: Credenciales guardadas en localStorage
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+### 🎬 Interfaz de Usuario
+- **Dark Mode nativo** con gradientes modernos
+- **Sidebar categorizado** con contador de canales por categoría
+- **Búsqueda en tiempo real** con filtrado instantáneo
+- **Sistema de favoritos** para marcar canales preferidos
+- **Diseño responsive** - funciona en desktop, tablet y móvil
 
-## Code scaffolding
+### 📹 Reproductor Avanzado
+- **Video.js** con soporte para HLS (m3u8)
+- **Detección automática** de formatos (m3u8, ts, mp4, webm)
+- **Controles personalizados** con diseño moderno
+- **Información de canal** superpuesta
+- **Manejo robusto de errores** con mensajes descriptivos
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+## 🚀 Instalación y Uso
 
-```bash
-ng generate component component-name
-```
-
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
-
-```bash
-ng generate --help
-```
-
-## Building
-
-To build the project run:
-
-```bash
-ng build
-```
-
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
+### 1️⃣ Instalar Dependencias
 
 ```bash
-ng test
+npm install
 ```
 
-## Running end-to-end tests
+### 2️⃣ Iniciar la Aplicación
 
-For end-to-end (e2e) testing, run:
+```bash
+npm start
+```
+
+La aplicación estará disponible en `http://localhost:4200`
+
+### 3️⃣ (Opcional) Iniciar Proxy para CORS
+
+Si tienes problemas de CORS:
+
+```bash
+# Instalar dependencias del proxy
+npm install express cors node-fetch
+
+# Ejecutar el proxy en otra terminal
+node proxy-server.js
+```
+
+## 🐛 Solución de Problemas
+
+### Error de CORS
+- Usa el proxy incluido (ver sección 3️⃣)
+- O instala una extensión de navegador para desarrollo
+
+### Stream no reproduce
+- Verifica que la URL del stream sea válida
+- Asegúrate de que el formato sea M3U8, TS o MP4
+
+**¡Disfruta de tu IPTV Player! 📺✨**
+
 
 ```bash
 ng e2e

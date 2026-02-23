@@ -1,0 +1,471 @@
+/* ============================================
+   VANTIX IPTV - Video Player Styles
+   ============================================ */
+
+/* Importar estilos de Video.js */
+@import 'video.js/dist/video-js.css';
+
+:host {
+  display: block;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+.video-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background-color: #000;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 0;
+}
+
+/* Video.js */
+.video-js {
+  width: 100% !important;
+  height: 100% !important;
+  font-family: 'Inter', system-ui, sans-serif;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.video-js video {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* Big Play Button */
+.video-js .vjs-big-play-button {
+  background: rgba(139, 92, 246, 0.9);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  width: 72px;
+  height: 72px;
+  line-height: 72px;
+  font-size: 32px;
+  top: 50%;
+  left: 50%;
+  margin-top: -36px;
+  margin-left: -36px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 8px 32px rgba(139, 92, 246, 0.4);
+}
+
+.video-js .vjs-big-play-button:hover {
+  background: rgba(139, 92, 246, 1);
+  transform: scale(1.1);
+  box-shadow: 0 12px 40px rgba(139, 92, 246, 0.5);
+}
+
+/* Control Bar */
+.video-js .vjs-control-bar {
+  background: linear-gradient(0deg, rgba(0, 0, 0, 0.95), rgba(0, 0, 0, 0.7)) !important;
+  backdrop-filter: blur(12px);
+  height: 48px !important;
+  padding: 0 12px !important;
+  display: flex !important;
+  align-items: center !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.video-js .vjs-button {
+  border-radius: 8px !important;
+  margin: 0 2px !important;
+  transition: all 0.2s !important;
+}
+
+.video-js .vjs-button:hover {
+  background-color: rgba(139, 92, 246, 0.3) !important;
+}
+
+.video-js .vjs-play-control.vjs-playing:hover {
+  background-color: rgba(139, 92, 246, 0.4) !important;
+}
+
+/* Progress Bar */
+.video-js .vjs-play-progress,
+.video-js .vjs-volume-level {
+  background: linear-gradient(90deg, #8b5cf6, #ec4899) !important;
+}
+
+.video-js .vjs-progress-control .vjs-progress-holder {
+  height: 4px !important;
+  margin: 0 !important;
+  transition: height 0.2s !important;
+}
+
+.video-js .vjs-progress-control:hover .vjs-progress-holder {
+  height: 8px !important;
+}
+
+.video-js .vjs-slider {
+  background-color: rgba(255, 255, 255, 0.15) !important;
+  border-radius: 4px !important;
+}
+
+.video-js .vjs-icon-placeholder:before {
+  font-size: 1.6em !important;
+  line-height: 1.8 !important;
+}
+
+/* Control bar hover visibility */
+.video-js.vjs-user-inactive.vjs-playing .vjs-control-bar {
+  opacity: 0 !important;
+  transition: opacity 0.5s !important;
+}
+
+.video-js:hover .vjs-control-bar {
+  opacity: 1 !important;
+}
+
+/* Loading spinner */
+.video-js .vjs-loading-spinner {
+  border-color: rgba(139, 92, 246, 0.3);
+}
+
+.video-js .vjs-loading-spinner:before,
+.video-js .vjs-loading-spinner:after {
+  border-color: #8b5cf6 transparent;
+}
+
+/* === OVERLAYS === */
+.loading-overlay,
+.error-overlay,
+.empty-state {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.loading-overlay {
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  pointer-events: none;
+}
+
+.spinner-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.spinner {
+  width: 44px;
+  height: 44px;
+  border: 3px solid rgba(139, 92, 246, 0.2);
+  border-top-color: #8b5cf6;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.spinner-container p {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.error-overlay {
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(12px);
+  padding: 24px;
+}
+
+.error-content {
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 16px;
+  padding: 32px;
+  max-width: 380px;
+  text-align: center;
+}
+
+.error-icon {
+  width: 44px;
+  height: 44px;
+  color: #ef4444;
+  margin: 0 auto 16px;
+}
+
+.error-content h3 {
+  color: white;
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.error-content p {
+  color: #fca5a5;
+  font-size: 0.9rem;
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+
+.retry-btn {
+  background: linear-gradient(135deg, #dc2626, #b91c1c);
+  color: white;
+  padding: 10px 24px;
+  border-radius: 10px;
+  border: none;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.retry-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(220, 38, 38, 0.3);
+}
+
+.empty-state {
+  background: linear-gradient(135deg, rgba(15, 15, 25, 0.95), rgba(10, 10, 15, 0.95));
+}
+
+.empty-content {
+  text-align: center;
+  padding: 32px;
+}
+
+.empty-icon {
+  width: 64px;
+  height: 64px;
+  color: rgba(139, 92, 246, 0.3);
+  margin: 0 auto 20px;
+}
+
+.empty-content h3 {
+  color: white;
+  font-size: 1.3rem;
+  font-weight: 800;
+  margin-bottom: 8px;
+  background: linear-gradient(135deg, #a78bfa, #ec4899);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.empty-content p {
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+/* === AUDIO TRACK PANEL === */
+.audio-track-panel {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 110;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.audio-toggle-btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.85);
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.audio-toggle-btn:hover {
+  background: rgba(139, 92, 246, 0.5);
+  border-color: rgba(139, 92, 246, 0.4);
+  color: white;
+  transform: scale(1.05);
+}
+
+.audio-track-panel.open .audio-toggle-btn {
+  background: rgba(139, 92, 246, 0.6);
+  border-color: rgba(139, 92, 246, 0.5);
+  color: white;
+}
+
+.audio-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #8b5cf6, #ec4899);
+  color: white;
+  font-size: 0.65rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.4);
+}
+
+/* Audio Menu Dropdown */
+.audio-menu {
+  background: rgba(15, 15, 25, 0.95);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  min-width: 240px;
+  overflow: hidden;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5),
+              0 0 0 1px rgba(139, 92, 246, 0.1);
+  animation: audioMenuIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes audioMenuIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.audio-menu-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 16px 10px;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.audio-menu-header svg {
+  color: #8b5cf6;
+}
+
+.audio-menu-list {
+  padding: 6px;
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.audio-track-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 0.88rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: left;
+}
+
+.audio-track-item:hover {
+  background: rgba(139, 92, 246, 0.12);
+  color: white;
+}
+
+.audio-track-item.active {
+  background: rgba(139, 92, 246, 0.18);
+  color: white;
+}
+
+.track-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.audio-track-item.active .track-indicator {
+  color: #8b5cf6;
+}
+
+.track-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.audio-track-item:hover .track-dot {
+  background: rgba(139, 92, 246, 0.5);
+}
+
+.track-label {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.track-lang {
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(139, 92, 246, 0.15);
+  color: #a78bfa;
+  letter-spacing: 0.05em;
+  flex-shrink: 0;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .video-js .vjs-big-play-button {
+    width: 56px;
+    height: 56px;
+    line-height: 56px;
+    font-size: 24px;
+    margin-top: -28px;
+    margin-left: -28px;
+  }
+
+  .video-js .vjs-control-bar {
+    height: 40px !important;
+  }
+
+  .audio-track-panel {
+    top: 10px;
+    right: 10px;
+  }
+
+  .audio-toggle-btn {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+  }
+
+  .audio-menu {
+    min-width: 200px;
+  }
+}
