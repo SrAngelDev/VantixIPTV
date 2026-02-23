@@ -14,19 +14,16 @@
   NODE_VERSION = "20"
   NPM_FLAGS = "--legacy-peer-deps"
 
-# Función proxy: timeout extendido para streams grandes
-[functions]
-  node_bundler = "esbuild"
+# ================================================
+# Edge Functions (proxy con streaming)
+# ================================================
+[[edge_functions]]
+  function = "proxy"
+  path = "/api/proxy"
 
 # ================================================
 # Redirects
 # ================================================
-
-# API Proxy shortcut: /api/proxy → función serverless
-[[redirects]]
-  from = "/api/proxy"
-  to = "/.netlify/functions/proxy"
-  status = 200
 
 # SPA fallback: todas las rutas → index.html (Angular Router)
 [[redirects]]

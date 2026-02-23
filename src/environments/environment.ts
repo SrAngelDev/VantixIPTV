@@ -1,4 +1,4 @@
 export const environment = {
   production: true,
-  proxyUrl: '/.netlify/functions/proxy'
+  proxyUrl: '/api/proxy'
 };
