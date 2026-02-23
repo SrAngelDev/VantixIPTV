@@ -96,6 +96,65 @@ export interface XtreamStream {
 }
 
 /**
+ * Serie de Xtream Codes (lista de series)
+ */
+export interface XtreamSeries {
+  num: number;
+  name: string;
+  series_id: number;
+  cover: string;
+  plot?: string;
+  cast?: string;
+  director?: string;
+  genre?: string;
+  releaseDate?: string;
+  last_modified?: string;
+  rating?: string;
+  rating_5based?: number;
+  backdrop_path?: string[];
+  youtube_trailer?: string;
+  episode_run_time?: string;
+  category_id: string;
+}
+
+/**
+ * Info detallada de una serie (temporadas y episodios)
+ */
+export interface XtreamSeriesInfo {
+  seasons: XtreamSeason[];
+  info: any;
+  episodes: { [seasonNum: string]: XtreamEpisode[] };
+}
+
+export interface XtreamSeason {
+  air_date?: string;
+  episode_count?: number;
+  id?: number;
+  name?: string;
+  overview?: string;
+  season_number: number;
+  cover?: string;
+  cover_big?: string;
+}
+
+export interface XtreamEpisode {
+  id: string;
+  episode_num: number;
+  title: string;
+  container_extension: string;
+  info?: any;
+  custom_sid?: string;
+  added?: string;
+  season: number;
+  direct_source?: string;
+}
+
+/**
+ * Tipo de contenido activo
+ */
+export type ContentType = 'live' | 'movie' | 'series';
+
+/**
  * Estado de carga de la aplicación
  */
 export interface LoadingState {

@@ -29,6 +29,77 @@
       </button>
     </div>
 
+    <!-- Content Type Tabs (Xtream only, sidebar open) -->
+    @if (isXtream() && isSidebarOpen()) {
+      <div class="content-type-tabs">
+        <button 
+          (click)="switchContentType('live')" 
+          [class.active]="contentType() === 'live'"
+          class="content-tab">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M2 8a2 2 0 012-2h16a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V8z"/>
+            <path d="M2 12h20"/>
+            <circle cx="7" cy="15" r="1" fill="currentColor"/>
+          </svg>
+          <span>TV en Directo</span>
+        </button>
+        <button 
+          (click)="switchContentType('movie')" 
+          [class.active]="contentType() === 'movie'"
+          class="content-tab">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/>
+          </svg>
+          <span>Películas</span>
+        </button>
+        <button 
+          (click)="switchContentType('series')" 
+          [class.active]="contentType() === 'series'"
+          class="content-tab">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="2" y="3" width="20" height="18" rx="2"/>
+            <path d="M4 7h16M4 11h16M4 15h10"/>
+          </svg>
+          <span>Series</span>
+        </button>
+      </div>
+    }
+
+    <!-- Content Type Icons (Xtream, sidebar collapsed) -->
+    @if (isXtream() && !isSidebarOpen()) {
+      <div class="content-type-icons">
+        <button 
+          (click)="switchContentType('live')" 
+          [class.active]="contentType() === 'live'"
+          class="content-icon-btn"
+          title="TV en Directo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M2 8a2 2 0 012-2h16a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V8z"/>
+            <path d="M2 12h20"/>
+          </svg>
+        </button>
+        <button 
+          (click)="switchContentType('movie')" 
+          [class.active]="contentType() === 'movie'"
+          class="content-icon-btn"
+          title="Películas">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/>
+          </svg>
+        </button>
+        <button 
+          (click)="switchContentType('series')" 
+          [class.active]="contentType() === 'series'"
+          class="content-icon-btn"
+          title="Series">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="2" y="3" width="20" height="18" rx="2"/>
+            <path d="M4 7h16M4 11h16M4 15h10"/>
+          </svg>
+        </button>
+      </div>
+    }
+
     <!-- Categories -->
     <div class="sidebar-content">
       <div class="sidebar-section">
@@ -40,13 +111,13 @@
             (click)="selectCategory(null)"
             [class.active]="selectedCategoryId() === null && !showFavoritesOnly()"
             class="cat-btn"
-            [title]="'Todos los canales'">
+            [title]="'Todo'">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M4 6h16M4 10h16M4 14h16M4 18h16"/>
             </svg>
             @if (isSidebarOpen()) {
-              <span>Todos</span>
-              <span class="cat-count">{{ channels().length }}</span>
+              <span>Todo</span>
+              <span class="cat-count">{{ contentType() === 'series' ? seriesList().length : channels().length }}</span>
             }
           </button>
           <button 
@@ -109,6 +180,24 @@
         </svg>
       </button>
 
+      <!-- Mobile Content Type Switcher -->
+      @if (isXtream()) {
+        <div class="mobile-content-switcher mobile-only">
+          <button 
+            (click)="switchContentType('live')" 
+            [class.active]="contentType() === 'live'"
+            class="mobile-tab">TV</button>
+          <button 
+            (click)="switchContentType('movie')" 
+            [class.active]="contentType() === 'movie'"
+            class="mobile-tab">Películas</button>
+          <button 
+            (click)="switchContentType('series')" 
+            [class.active]="contentType() === 'series'"
+            class="mobile-tab">Series</button>
+        </div>
+      }
+
       <div class="search-wrapper">
         <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
@@ -116,7 +205,7 @@
         <input 
           type="text"
           [(ngModel)]="searchTerm"
-          placeholder="Buscar canales..."
+          [placeholder]="'Buscar ' + contentLabel + '...'"
           class="search-input">
         @if (searchTerm()) {
           <button (click)="clearSearch()" class="search-clear">
@@ -128,13 +217,21 @@
       </div>
 
       <div class="topbar-actions">
-        <span class="channel-counter">{{ filteredChannels().length }} canales</span>
+        <span class="channel-counter">{{ totalItemsCount }} {{ contentLabel }}</span>
       </div>
     </header>
 
     <!-- Content Area -->
     <div class="content-area">
-      <!-- Video Player - Theatre Mode -->
+      <!-- Loading Overlay -->
+      @if (contentLoading()) {
+        <div class="content-loading">
+          <div class="loading-spinner"></div>
+          <span>Cargando {{ contentLabel }}...</span>
+        </div>
+      }
+
+      <!-- Video Player -->
       @if (selectedChannel()) {
         <div class="player-section" [class.theatre]="isTheatreMode()">
           <div class="player-wrapper">
@@ -146,8 +243,10 @@
                 <div>
                   <h2 class="player-channel-name">{{ selectedChannel()?.name }}</h2>
                   <span class="player-channel-cat">
-                    <span class="live-dot"></span>
-                    {{ selectedChannel()?.categoryName || 'En vivo' }}
+                    @if (contentType() === 'live') {
+                      <span class="live-dot"></span>
+                    }
+                    {{ selectedChannel()?.categoryName || (contentType() === 'live' ? 'En vivo' : contentType() === 'movie' ? 'Película' : 'Serie') }}
                   </span>
                 </div>
               </div>
@@ -175,76 +274,227 @@
         </div>
       }
 
-      <!-- Channels Grid -->
-      <div class="channels-section" [class.hidden-channels]="isTheatreMode() && selectedChannel()">
-        <!-- Section Header -->
-        <div class="channels-header">
-          <h2 class="channels-title">
-            @if (showFavoritesOnly()) {
-              Favoritos
-            } @else if (selectedCategoryId()) {
-              @for (cat of categories(); track cat.id) {
-                @if (cat.id === selectedCategoryId()) {
-                  {{ cat.name }}
+      <!-- ============= LIVE TV & MOVIES: Channel Grid ============= -->
+      @if (contentType() !== 'series' || !isXtream()) {
+        <div class="channels-section" [class.hidden-channels]="isTheatreMode() && selectedChannel()">
+          <div class="channels-header">
+            <h2 class="channels-title">
+              @if (showFavoritesOnly()) {
+                Favoritos
+              } @else if (selectedCategoryId()) {
+                @for (cat of categories(); track cat.id) {
+                  @if (cat.id === selectedCategoryId()) {
+                    {{ cat.name }}
+                  }
+                }
+              } @else {
+                @switch (contentType()) {
+                  @case ('live') { Todos los canales }
+                  @case ('movie') { Todas las películas }
+                  @default { Todo el contenido }
                 }
               }
-            } @else {
-              Todos los canales
-            }
-          </h2>
-        </div>
+            </h2>
+          </div>
 
-        <!-- Grid -->
-        <div class="channels-grid">
-          @for (channel of filteredChannels(); track channel.id) {
-            <button
-              (click)="selectChannel(channel)"
-              [class.playing]="selectedChannel()?.id === channel.id"
-              class="channel-card">
-              <div class="channel-thumb">
-                @if (channel.logo) {
-                  <img [src]="channel.logo" [alt]="channel.name" loading="lazy" onerror="this.style.display='none'">
-                }
-                @if (!channel.logo) {
-                  <span class="channel-letter">{{ channel.name.charAt(0) }}</span>
-                }
-                <!-- Favorite -->
-                <button 
-                  (click)="$event.stopPropagation(); toggleFavorite(channel.id, $event)"
-                  class="fav-btn"
-                  [class.is-fav]="isFavorite(channel.id)">
-                  <svg viewBox="0 0 24 24" [attr.fill]="isFavorite(channel.id) ? 'currentColor' : 'none'" stroke="currentColor" stroke-width="2">
-                    <path d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/>
-                  </svg>
-                </button>
-                <!-- Playing -->
-                @if (selectedChannel()?.id === channel.id) {
-                  <div class="playing-badge">
-                    <span class="eq-bar"></span>
-                    <span class="eq-bar"></span>
-                    <span class="eq-bar"></span>
-                  </div>
-                }
-              </div>
-              <div class="channel-info">
-                <span class="channel-name">{{ channel.name }}</span>
-                <span class="channel-category">{{ channel.categoryName || 'General' }}</span>
-              </div>
-            </button>
+          <div class="channels-grid">
+            @for (channel of filteredChannels(); track channel.id) {
+              <button
+                (click)="selectChannel(channel)"
+                [class.playing]="selectedChannel()?.id === channel.id"
+                class="channel-card">
+                <div class="channel-thumb">
+                  @if (channel.logo) {
+                    <img [src]="channel.logo" [alt]="channel.name" loading="lazy" onerror="this.style.display='none'">
+                  }
+                  @if (!channel.logo) {
+                    <span class="channel-letter">{{ channel.name.charAt(0) }}</span>
+                  }
+                  <button 
+                    (click)="$event.stopPropagation(); toggleFavorite(channel.id, $event)"
+                    class="fav-btn"
+                    [class.is-fav]="isFavorite(channel.id)">
+                    <svg viewBox="0 0 24 24" [attr.fill]="isFavorite(channel.id) ? 'currentColor' : 'none'" stroke="currentColor" stroke-width="2">
+                      <path d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/>
+                    </svg>
+                  </button>
+                  @if (selectedChannel()?.id === channel.id) {
+                    <div class="playing-badge">
+                      <span class="eq-bar"></span>
+                      <span class="eq-bar"></span>
+                      <span class="eq-bar"></span>
+                    </div>
+                  }
+                </div>
+                <div class="channel-info">
+                  <span class="channel-name">{{ channel.name }}</span>
+                  <span class="channel-category">{{ channel.categoryName || 'General' }}</span>
+                </div>
+              </button>
+            }
+          </div>
+
+          @if (filteredChannels().length === 0 && !contentLoading()) {
+            <div class="empty-state">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+              </svg>
+              <h3>No se encontró contenido</h3>
+              <p>Prueba con otra categoría o búsqueda</p>
+            </div>
           }
         </div>
+      }
 
-        <!-- Empty State -->
-        @if (filteredChannels().length === 0) {
-          <div class="empty-state">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-              <path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
-            </svg>
-            <h3>No se encontraron canales</h3>
-            <p>Prueba con otra categoría o búsqueda</p>
-          </div>
-        }
-      </div>
+      <!-- ============= SERIES: Grid & Detail ============= -->
+      @if (contentType() === 'series' && isXtream()) {
+        <div class="channels-section" [class.hidden-channels]="isTheatreMode() && selectedChannel()">
+
+          <!-- Series Detail View -->
+          @if (selectedSeries()) {
+            <div class="series-detail">
+              <button (click)="backToSeriesList()" class="back-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M19 12H5m7-7l-7 7 7 7"/>
+                </svg>
+                <span>Volver a series</span>
+              </button>
+
+              <div class="series-hero">
+                @if (selectedSeries()!.cover) {
+                  <img [src]="selectedSeries()!.cover" [alt]="selectedSeries()!.name" class="series-cover" onerror="this.style.display='none'">
+                }
+                <div class="series-meta">
+                  <h2 class="series-title">{{ selectedSeries()!.name }}</h2>
+                  @if (selectedSeries()!.genre) {
+                    <span class="series-genre">{{ selectedSeries()!.genre }}</span>
+                  }
+                  @if (selectedSeries()!.rating) {
+                    <div class="series-rating">
+                      <svg viewBox="0 0 24 24" fill="currentColor" stroke="none" width="16" height="16">
+                        <path d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/>
+                      </svg>
+                      <span>{{ selectedSeries()!.rating }}</span>
+                    </div>
+                  }
+                  @if (selectedSeries()!.plot) {
+                    <p class="series-plot">{{ selectedSeries()!.plot }}</p>
+                  }
+                  @if (selectedSeries()!.cast) {
+                    <p class="series-cast"><strong>Reparto:</strong> {{ selectedSeries()!.cast }}</p>
+                  }
+                  @if (selectedSeries()!.director) {
+                    <p class="series-cast"><strong>Director:</strong> {{ selectedSeries()!.director }}</p>
+                  }
+                </div>
+              </div>
+
+              @if (seriesLoading()) {
+                <div class="content-loading inline-loading">
+                  <div class="loading-spinner"></div>
+                  <span>Cargando episodios...</span>
+                </div>
+              }
+
+              <!-- Season tabs & episodes -->
+              @if (!seriesLoading() && availableSeasons().length > 0) {
+                <div class="season-tabs">
+                  @for (season of availableSeasons(); track season) {
+                    <button 
+                      (click)="selectSeason(season)"
+                      [class.active]="selectedSeason() === season"
+                      class="season-tab">
+                      Temporada {{ season }}
+                    </button>
+                  }
+                </div>
+
+                <div class="episodes-list">
+                  @for (episode of seasonEpisodes(); track episode.id) {
+                    <button (click)="playEpisode(episode)" class="episode-card">
+                      <div class="episode-num">{{ episode.episode_num }}</div>
+                      <div class="episode-info">
+                        <span class="episode-title">{{ episode.title || 'Episodio ' + episode.episode_num }}</span>
+                        <span class="episode-meta">
+                          S{{ episode.season }}E{{ episode.episode_num }}
+                          @if (episode.container_extension) {
+                            · {{ episode.container_extension | uppercase }}
+                          }
+                        </span>
+                      </div>
+                      <svg class="episode-play" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+                        <polygon points="5 3 19 12 5 21 5 3"/>
+                      </svg>
+                    </button>
+                  }
+                </div>
+
+                @if (seasonEpisodes().length === 0) {
+                  <div class="empty-state">
+                    <h3>Sin episodios disponibles</h3>
+                    <p>Esta temporada no tiene episodios</p>
+                  </div>
+                }
+              }
+            </div>
+          }
+
+          <!-- Series Grid List -->
+          @if (!selectedSeries()) {
+            <div class="channels-header">
+              <h2 class="channels-title">
+                @if (selectedCategoryId()) {
+                  @for (cat of categories(); track cat.id) {
+                    @if (cat.id === selectedCategoryId()) {
+                      {{ cat.name }}
+                    }
+                  }
+                } @else {
+                  Todas las series
+                }
+              </h2>
+            </div>
+
+            <div class="channels-grid series-grid">
+              @for (series of filteredSeries(); track series.series_id) {
+                <button (click)="openSeries(series)" class="channel-card series-card">
+                  <div class="channel-thumb series-thumb">
+                    @if (series.cover) {
+                      <img [src]="series.cover" [alt]="series.name" loading="lazy" onerror="this.style.display='none'">
+                    }
+                    @if (!series.cover) {
+                      <span class="channel-letter">{{ series.name.charAt(0) }}</span>
+                    }
+                    @if (series.rating) {
+                      <div class="series-rating-badge">
+                        <svg viewBox="0 0 24 24" fill="currentColor" stroke="none" width="10" height="10">
+                          <path d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/>
+                        </svg>
+                        {{ series.rating }}
+                      </div>
+                    }
+                  </div>
+                  <div class="channel-info">
+                    <span class="channel-name">{{ series.name }}</span>
+                    <span class="channel-category">{{ series.genre || 'Serie' }}</span>
+                  </div>
+                </button>
+              }
+            </div>
+
+            @if (filteredSeries().length === 0 && !contentLoading()) {
+              <div class="empty-state">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <rect x="2" y="3" width="20" height="18" rx="2"/>
+                  <path d="M4 7h16M4 11h16M4 15h10"/>
+                </svg>
+                <h3>No se encontraron series</h3>
+                <p>Prueba con otra categoría o búsqueda</p>
+              </div>
+            }
+          }
+        </div>
+      }
     </div>
   </main>
 </div>

@@ -9,7 +9,11 @@ import {
   XtreamAuthResponse,
   XtreamCategory,
   XtreamStream,
-  LoadingState
+  XtreamSeries,
+  XtreamSeriesInfo,
+  XtreamEpisode,
+  LoadingState,
+  ContentType
 } from '../models/channel.interface';
 import { M3uParserService } from './m3u-parser.service';
 import { StorageService } from './storage.service';
@@ -283,7 +287,7 @@ export class IptvService {
         map(streams => streams.map(stream => ({
           id: stream.stream_id?.toString() || stream.num?.toString(),
           name: stream.name,
-          streamUrl: this.buildXtreamStreamUrl(host, username, password, stream.stream_id, stream.container_extension || 'mp4'),
+          streamUrl: this.getProxiedUrl(this.buildXtreamStreamUrl(host, username, password, stream.stream_id, stream.container_extension || 'mp4', 'movie')),
           logo: stream.stream_icon,
           categoryId: stream.category_id,
           streamType: 'movie' as const,
@@ -295,6 +299,110 @@ export class IptvService {
   }
 
   /**
+   * ==========================================
+   * MÉTODOS PARA SERIES (Xtream Codes)
+   * ==========================================
+   */
+
+  /**
+   * Obtiene las categorías de Series
+   */
+  getXtreamSeriesCategories(host: string, username: string, password: string): Observable<Category[]> {
+    const directUrl = this.buildXtreamUrl(host, 'player_api.php', {
+      username,
+      password,
+      action: 'get_series_categories'
+    });
+    const url = this.getProxiedUrl(directUrl);
+
+    return this.http.get<XtreamCategory[]>(url)
+      .pipe(
+        map(categories => categories.map(cat => ({
+          id: cat.category_id,
+          name: cat.category_name,
+          parentId: cat.parent_id ? cat.parent_id.toString() : undefined,
+          type: 'series' as const
+        }))),
+        catchError(this.handleError)
+      );
+  }
+
+  /**
+   * Obtiene la lista de series
+   */
+  getXtreamSeries(
+    host: string,
+    username: string,
+    password: string,
+    categoryId?: string
+  ): Observable<XtreamSeries[]> {
+    const params: any = {
+      username,
+      password,
+      action: 'get_series'
+    };
+
+    if (categoryId) {
+      params.category_id = categoryId;
+    }
+
+    const directUrl = this.buildXtreamUrl(host, 'player_api.php', params);
+    const url = this.getProxiedUrl(directUrl);
+
+    return this.http.get<XtreamSeries[]>(url)
+      .pipe(
+        catchError(this.handleError)
+      );
+  }
+
+  /**
+   * Obtiene la info detallada de una serie (temporadas + episodios)
+   */
+  getXtreamSeriesInfo(
+    host: string,
+    username: string,
+    password: string,
+    seriesId: number
+  ): Observable<XtreamSeriesInfo> {
+    const directUrl = this.buildXtreamUrl(host, 'player_api.php', {
+      username,
+      password,
+      action: 'get_series_info',
+      series_id: seriesId.toString()
+    });
+    const url = this.getProxiedUrl(directUrl);
+
+    return this.http.get<XtreamSeriesInfo>(url)
+      .pipe(
+        catchError(this.handleError)
+      );
+  }
+
+  /**
+   * Convierte episodios de una serie en Channels reproducibles
+   */
+  mapEpisodesToChannels(
+    episodes: XtreamEpisode[],
+    seriesName: string,
+    host: string,
+    username: string,
+    password: string,
+    cover?: string
+  ): Channel[] {
+    return episodes.map(ep => ({
+      id: `series_${ep.id}`,
+      name: ep.title || `${seriesName} - S${ep.season}E${ep.episode_num}`,
+      streamUrl: this.getProxiedUrl(this.buildXtreamStreamUrl(host, username, password, parseInt(ep.id), ep.container_extension || 'mkv', 'series')),
+      logo: cover,
+      categoryName: `Temporada ${ep.season}`,
+      categoryId: `season_${ep.season}`,
+      streamType: 'series' as const,
+      added: ep.added,
+      containerExtension: ep.container_extension
+    }));
+  }
+
+  /**
    * Construye la URL del stream de Xtream
    */
   private buildXtreamStreamUrl(
@@ -302,12 +410,12 @@ export class IptvService {
     username: string,
     password: string,
     streamId: number,
-    extension: string = 'm3u8'
+    extension: string = 'm3u8',
+    type: 'live' | 'movie' | 'series' = 'live'
   ): string {
     const cleanHost = host.replace(/\/$/, '');
-    // Formato Xtream: http://host:port/live/username/password/streamId.extension
-    const streamUrl = `${cleanHost}/live/${username}/${password}/${streamId}.${extension}`;
-    console.log('[IPTV-SERVICE] Building stream URL:', streamUrl);
+    // Formato Xtream: http://host:port/{type}/username/password/streamId.extension
+    const streamUrl = `${cleanHost}/${type}/${username}/${password}/${streamId}.${extension}`;
     return streamUrl;
   }
 
