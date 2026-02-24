@@ -25,6 +25,10 @@ export class VideoPlayerComponent implements OnInit, OnDestroy, AfterViewInit {
   private player?: VideoJsPlayer;
   private _channel = signal<Channel | null>(null);
   private audioDetectionTimer?: any;
+  private playPromise?: Promise<void>;
+  private retryCount = 0;
+  private readonly MAX_RETRIES = 2;
+  private retryTimeout?: any;
   
   @Input() 
   set channel(value: Channel | null) {
@@ -65,6 +69,9 @@ export class VideoPlayerComponent implements OnInit, OnDestroy, AfterViewInit {
   ngOnDestroy(): void {
     if (this.audioDetectionTimer) {
       clearTimeout(this.audioDetectionTimer);
+    }
+    if (this.retryTimeout) {
+      clearTimeout(this.retryTimeout);
     }
     if (this.player) {
       this.player.dispose();
@@ -122,7 +129,20 @@ export class VideoPlayerComponent implements OnInit, OnDestroy, AfterViewInit {
         this.isLoading.set(false);
         const error = this.player?.error();
         if (error) {
-          this.error.set(`Error de reproducción (${error.code})`);
+          // Reintentar automáticamente en errores de red/fuente (code 2 o 4)
+          if ((error.code === 2 || error.code === 4) && this.retryCount < this.MAX_RETRIES) {
+            this.retryCount++;
+            console.warn(`[VIDEO-PLAYER] Error code ${error.code}, reintentando (${this.retryCount}/${this.MAX_RETRIES})...`);
+            this.retryTimeout = setTimeout(() => {
+              const ch = this._channel();
+              if (ch && this.player) {
+                this.player.error(undefined); // Limpiar error anterior
+                this.loadChannel(ch);
+              }
+            }, 2000 * this.retryCount); // Backoff incremental
+          } else {
+            this.error.set(`Error de reproducción (${error.code})`);
+          }
         }
       });
     });
@@ -171,10 +191,24 @@ export class VideoPlayerComponent implements OnInit, OnDestroy, AfterViewInit {
   loadChannel(channel: Channel): void {
     if (!this.player) return;
 
+    // Cancelar reintento pendiente
+    if (this.retryTimeout) {
+      clearTimeout(this.retryTimeout);
+      this.retryTimeout = undefined;
+    }
+
+    // Resetear conteo de reintentos al cambiar de canal (no al reintentar)
+    if (this._channel()?.id !== channel.id || this.retryCount === 0) {
+      this.retryCount = 0;
+    }
+
     this.isLoading.set(true);
     this.error.set(null);
     this.audioTracks.set([]);
     this.showAudioMenu.set(false);
+
+    // Pausar antes de cambiar fuente para evitar "play() interrupted"
+    this.player.pause();
 
     let streamUrl = channel.streamUrl;
 
@@ -186,8 +220,18 @@ export class VideoPlayerComponent implements OnInit, OnDestroy, AfterViewInit {
     // Re-attach audio track listeners para el nuevo stream
     this.setupAudioTrackListeners();
 
-    this.player.play()?.catch(e => {
-      console.log('Autoplay prevented:', e);
+    // Esperar a que el player esté listo antes de reproducir
+    this.player.ready(() => {
+      // Pequeño delay para evitar conflictos de carga
+      setTimeout(() => {
+        if (this.player && !this.player.paused()) return; // Ya está reproduciendo
+        this.player?.play()?.catch((e: Error) => {
+          // Solo loguear si no es una interrupción por nueva carga
+          if (e.name !== 'AbortError') {
+            console.warn('[VIDEO-PLAYER] Autoplay prevented:', e.message);
+          }
+        });
+      }, 100);
     });
   }
 

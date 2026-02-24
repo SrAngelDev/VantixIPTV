@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { M3UChannel, M3UParseResult, ExtinfAttributes } from '../models/m3u-parser.interface';
+import { environment } from '../../environments/environment';
 
 /**
  * Servicio para parsear archivos M3U y M3U8
@@ -65,6 +66,12 @@ export class M3uParserService {
       parseErrors.push(`Error general parseando M3U: ${error}`);
     }
 
+    // Log resumen en vez de uno por URL
+    if (this.transformedCount > 0 && !environment.production) {
+      console.log(`[M3U-PARSER] Transformed ${this.transformedCount} Xtream URLs to HLS format`);
+      this.transformedCount = 0;
+    }
+
     return {
       channels,
       categories: Array.from(categoriesSet).sort(),
@@ -119,12 +126,21 @@ export class M3uParserService {
     return result;
   }
 
+  /** Contador interno para log de resumen */
+  private transformedCount = 0;
+
   /**
    * Transforma URLs de Xtream Codes sin extensión a formato HLS (.m3u8)
    * Patrón: http://host:port/username/password/streamId -> http://host:port/live/username/password/streamId.m3u8
+   * Evita re-transformar URLs que ya tienen /live/ o extensión de archivo.
    */
   private transformXtreamUrl(url: string): string {
     try {
+      // No transformar si ya tiene /live/ o ya tiene extensión de archivo
+      if (/\/live\//.test(url) || /\.[a-zA-Z0-9]{2,4}(\?.*)?$/.test(url)) {
+        return url;
+      }
+
       // Detectar URLs de Xtream: http://host:port/username/password/streamId
       const xtreamPattern = /^(https?:\/\/[^\/]+)\/([^\/]+)\/([^\/]+)\/(\d+)$/;
       const match = url.match(xtreamPattern);
@@ -132,14 +148,15 @@ export class M3uParserService {
       if (match) {
         const [, baseUrl, username, password, streamId] = match;
         const hlsUrl = `${baseUrl}/live/${username}/${password}/${streamId}.m3u8`;
-        console.log(`[M3U-PARSER] Transformed Xtream URL: ${url} -> ${hlsUrl}`);
+        this.transformedCount++;
         return hlsUrl;
       }
     } catch (error) {
-      console.warn('[M3U-PARSER] Error transforming URL:', error);
+      if (!environment.production) {
+        console.warn('[M3U-PARSER] Error transforming URL:', error);
+      }
     }
     
-    // Si no es Xtream o falla, devolver URL original
     return url;
   }
 

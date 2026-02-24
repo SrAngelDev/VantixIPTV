@@ -64,6 +64,18 @@ export class IptvService {
   }
 
   /**
+   * Convierte URLs HTTP de logos a HTTPS para evitar Mixed Content
+   */
+  private sanitizeLogoUrl(url?: string): string | undefined {
+    if (!url) return undefined;
+    // Upgrade HTTP a HTTPS para evitar Mixed Content warnings
+    if (url.startsWith('http://')) {
+      return url.replace('http://', 'https://');
+    }
+    return url;
+  }
+
+  /**
    * Verifica si hay credenciales guardadas
    */
   private checkAuthentication(): void {
@@ -132,7 +144,7 @@ export class IptvService {
             id: `m3u_${index}`,
             name: m3uChannel.name,
             streamUrl: this.getProxiedUrl(m3uChannel.url), // Proxear streams también
-            logo: m3uChannel.tvgLogo,
+            logo: this.sanitizeLogoUrl(m3uChannel.tvgLogo),
             categoryName: m3uChannel.groupTitle,
             categoryId: m3uChannel.groupTitle ? this.generateCategoryId(m3uChannel.groupTitle) : undefined,
             epgChannelId: m3uChannel.tvgId,
@@ -288,7 +300,7 @@ export class IptvService {
           id: stream.stream_id?.toString() || stream.num?.toString(),
           name: stream.name,
           streamUrl: this.getProxiedUrl(this.buildXtreamStreamUrl(host, username, password, stream.stream_id, stream.container_extension || 'mp4', 'movie')),
-          logo: stream.stream_icon,
+          logo: this.sanitizeLogoUrl(stream.stream_icon),
           categoryId: stream.category_id,
           streamType: 'movie' as const,
           added: stream.added,
@@ -393,7 +405,7 @@ export class IptvService {
       id: `series_${ep.id}`,
       name: ep.title || `${seriesName} - S${ep.season}E${ep.episode_num}`,
       streamUrl: this.getProxiedUrl(this.buildXtreamStreamUrl(host, username, password, parseInt(ep.id), ep.container_extension || 'mkv', 'series')),
-      logo: cover,
+      logo: this.sanitizeLogoUrl(cover),
       categoryName: `Temporada ${ep.season}`,
       categoryId: `season_${ep.season}`,
       streamType: 'series' as const,
@@ -425,13 +437,12 @@ export class IptvService {
   private mapXtreamToChannel(stream: XtreamStream, host: string, username: string, password: string): Channel {
     const rawUrl = this.buildXtreamStreamUrl(host, username, password, stream.stream_id, 'm3u8');
     const streamUrl = this.getProxiedUrl(rawUrl);
-    console.log(`[IPTV-SERVICE] Channel "${stream.name}" mapped with URL:`, streamUrl);
     
     return {
       id: stream.stream_id.toString(),
       name: stream.name,
       streamUrl: streamUrl,
-      logo: stream.stream_icon,
+      logo: this.sanitizeLogoUrl(stream.stream_icon),
       categoryId: stream.category_id,
       epgChannelId: stream.epg_channel_id,
       streamType: 'live',

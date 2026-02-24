@@ -44,51 +44,54 @@ export default async function handler(request) {
       targetOrigin = '';
     }
 
-    // Headers que simulan una petición real de navegador
-    // Muchos servidores IPTV/Xtream verifican Referer y User-Agent
-    const fetchHeaders = {
-      'User-Agent':
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
-      Accept: '*/*',
-      'Accept-Language': 'en-US,en;q=0.9,es;q=0.8',
-      'Accept-Encoding': 'gzip, deflate',
-      Connection: 'keep-alive',
-      Referer: targetOrigin + '/',
-      Origin: targetOrigin,
-    };
-
     // Reenviar header Range si existe (para seeks)
     const rangeHeader = request.headers.get('range');
-    if (rangeHeader) {
-      fetchHeaders['Range'] = rangeHeader;
-    }
 
-    let response = await fetch(targetUrl, {
-      headers: fetchHeaders,
-      redirect: 'follow',
-    });
+    // Estrategias de headers en orden de prioridad
+    // Los servidores Xtream/IPTV suelen ser sensibles a los headers
+    const headerStrategies = [
+      // 1. Headers mínimos tipo reproductor (más compatible con Xtream)
+      {
+        'User-Agent': 'VLC/3.0.20 LibVLC/3.0.20',
+        Accept: '*/*',
+        ...(rangeHeader ? { Range: rangeHeader } : {}),
+      },
+      // 2. Headers de navegador sin Referer/Origin
+      {
+        'User-Agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+        Accept: '*/*',
+        'Accept-Language': 'en-US,en;q=0.9',
+        ...(rangeHeader ? { Range: rangeHeader } : {}),
+      },
+      // 3. Headers completos con Origin del servidor destino
+      {
+        'User-Agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+        Accept: '*/*',
+        'Accept-Language': 'en-US,en;q=0.9,es;q=0.8',
+        'Accept-Encoding': 'gzip, deflate',
+        Connection: 'keep-alive',
+        Referer: targetOrigin + '/',
+        Origin: targetOrigin,
+        ...(rangeHeader ? { Range: rangeHeader } : {}),
+      },
+      // 4. Headers tipo IPTVnator/Kodi
+      {
+        'User-Agent': 'IPTVnator/0.14.0',
+        Accept: '*/*',
+        ...(rangeHeader ? { Range: rangeHeader } : {}),
+      },
+    ];
 
-    // Si el servidor devuelve 403, reintentar sin Referer/Origin
-    // (algunos servidores rechazan Referer de distinto dominio)
-    if (response.status === 403) {
-      const retryHeaders = { ...fetchHeaders };
-      delete retryHeaders['Referer'];
-      delete retryHeaders['Origin'];
+    let response;
+    for (const headers of headerStrategies) {
       response = await fetch(targetUrl, {
-        headers: retryHeaders,
+        headers,
         redirect: 'follow',
       });
-    }
-
-    // Si sigue siendo 403, intentar con headers mínimos
-    if (response.status === 403) {
-      response = await fetch(targetUrl, {
-        headers: {
-          'User-Agent': 'VLC/3.0.20 LibVLC/3.0.20',
-          Accept: '*/*',
-        },
-        redirect: 'follow',
-      });
+      // Si el servidor no devuelve 403, usar esta respuesta
+      if (response.status !== 403) break;
     }
 
     const contentType = response.headers.get('content-type') || '';

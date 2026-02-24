@@ -6,7 +6,7 @@
  * para que también pasen por el proxy.
  */
 
-const FETCH_TIMEOUT = 15000;
+const FETCH_TIMEOUT = 20000;
 
 exports.handler = async function (event) {
   const corsHeaders = {
@@ -50,14 +50,42 @@ exports.handler = async function (event) {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT);
 
-    const response = await fetch(targetUrl, {
-      headers: {
+    // Extraer origin del servidor destino para headers
+    let targetOrigin;
+    try {
+      targetOrigin = new URL(targetUrl).origin;
+    } catch {
+      targetOrigin = '';
+    }
+
+    // Estrategias de headers - de más a menos compatible con Xtream
+    const headerStrategies = [
+      {
+        'User-Agent': 'VLC/3.0.20 LibVLC/3.0.20',
+        Accept: '*/*',
+      },
+      {
         'User-Agent':
           'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         Accept: '*/*',
       },
-      signal: controller.signal,
-    });
+      {
+        'User-Agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        Accept: '*/*',
+        Referer: targetOrigin + '/',
+        Origin: targetOrigin,
+      },
+    ];
+
+    let response;
+    for (const headers of headerStrategies) {
+      response = await fetch(targetUrl, {
+        headers,
+        signal: controller.signal,
+      });
+      if (response.status !== 403) break;
+    }
 
     clearTimeout(timeout);
 
