@@ -1,9 +1,7 @@
 import { Component, ElementRef, Input, OnDestroy, OnInit, ViewChild, signal, effect, AfterViewInit, computed, NgZone } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import videojs from 'video.js';
+import Hls from 'hls.js';
 import { Channel } from '../../models/channel.interface';
-
-type VideoJsPlayer = ReturnType<typeof videojs>;
 
 export interface AudioTrackInfo {
   id: number;
@@ -21,16 +19,16 @@ export interface AudioTrackInfo {
 })
 export class VideoPlayerComponent implements OnInit, OnDestroy, AfterViewInit {
   @ViewChild('videoElement', { static: false }) videoElement!: ElementRef<HTMLVideoElement>;
-  
-  private player?: VideoJsPlayer;
+
+  private hls?: Hls;
   private _channel = signal<Channel | null>(null);
-  private audioDetectionTimer?: any;
-  private playPromise?: Promise<void>;
   private retryCount = 0;
   private readonly MAX_RETRIES = 2;
   private retryTimeout?: any;
-  
-  @Input() 
+  private controlsTimeout?: any;
+  private lastDetectedTrackCount = -1;
+
+  @Input()
   set channel(value: Channel | null) {
     this._channel.set(value);
   }
@@ -40,8 +38,9 @@ export class VideoPlayerComponent implements OnInit, OnDestroy, AfterViewInit {
 
   isLoading = signal(false);
   error = signal<string | null>(null);
+  showControls = signal(true);
 
-  // Audio tracks
+  // Audio tracks — Hls.js los expone nativamente
   audioTracks = signal<AudioTrackInfo[]>([]);
   showAudioMenu = signal(false);
   activeAudioTrack = signal<string>('');
@@ -50,7 +49,7 @@ export class VideoPlayerComponent implements OnInit, OnDestroy, AfterViewInit {
   constructor(private ngZone: NgZone) {
     effect(() => {
       const channel = this._channel();
-      if (channel && this.player) {
+      if (channel && this.videoElement) {
         this.loadChannel(channel);
       }
     });
@@ -59,145 +58,77 @@ export class VideoPlayerComponent implements OnInit, OnDestroy, AfterViewInit {
   ngOnInit(): void {}
 
   ngAfterViewInit(): void {
-    this.initializePlayer();
-    
+    this.setupVideoListeners();
+
     if (this._channel()) {
       this.loadChannel(this._channel()!);
     }
   }
 
   ngOnDestroy(): void {
-    if (this.audioDetectionTimer) {
-      clearTimeout(this.audioDetectionTimer);
-    }
-    if (this.retryTimeout) {
-      clearTimeout(this.retryTimeout);
-    }
-    if (this.player) {
-      this.player.dispose();
-      this.player = undefined;
-    }
+    this.destroyHls();
+    if (this.retryTimeout) clearTimeout(this.retryTimeout);
+    if (this.controlsTimeout) clearTimeout(this.controlsTimeout);
   }
 
-  private initializePlayer(): void {
-    if (!this.videoElement) return;
+  /**
+   * Configura los event listeners del elemento <video> nativo
+   */
+  private setupVideoListeners(): void {
+    const video = this.videoElement?.nativeElement;
+    if (!video) return;
 
-    this.player = videojs(this.videoElement.nativeElement, {
-      controls: true,
-      autoplay: true,
-      preload: 'auto',
-      fluid: false,
-      fill: true,
-      responsive: true,
-      liveui: true,
-      html5: {
-        vhs: {
-          overrideNative: true,
-          enableLowInitialPlaylist: true,
-          smoothQualityChange: true,
-          useBandwidthFromLocalStorage: true
-        }
-      },
-      controlBar: {
-        pictureInPictureToggle: true
-      }
-    });
-
-    this.setupPlayerEvents();
-  }
-
-  private setupPlayerEvents(): void {
-    if (!this.player) return;
-
-    this.player.on('loadstart', () => {
+    video.addEventListener('loadstart', () => {
       this.ngZone.run(() => {
         this.isLoading.set(true);
         this.error.set(null);
-        this.audioTracks.set([]);
-        this.showAudioMenu.set(false);
       });
     });
 
-    this.player.on('canplay', () => {
-      this.ngZone.run(() => {
-        this.isLoading.set(false);
-      });
+    video.addEventListener('canplay', () => {
+      this.ngZone.run(() => this.isLoading.set(false));
     });
 
-    this.player.on('error', () => {
+    video.addEventListener('playing', () => {
+      this.ngZone.run(() => this.isLoading.set(false));
+    });
+
+    video.addEventListener('error', () => {
       this.ngZone.run(() => {
         this.isLoading.set(false);
-        const error = this.player?.error();
-        if (error) {
-          // Reintentar automáticamente en errores de red/fuente (code 2 o 4)
-          if ((error.code === 2 || error.code === 4) && this.retryCount < this.MAX_RETRIES) {
+        const mediaError = video.error;
+        if (mediaError) {
+          if ((mediaError.code === MediaError.MEDIA_ERR_NETWORK || mediaError.code === MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED)
+              && this.retryCount < this.MAX_RETRIES) {
             this.retryCount++;
-            console.warn(`[VIDEO-PLAYER] Error code ${error.code}, reintentando (${this.retryCount}/${this.MAX_RETRIES})...`);
+            console.warn(`[PLAYER] Error code ${mediaError.code}, reintentando (${this.retryCount}/${this.MAX_RETRIES})...`);
             this.retryTimeout = setTimeout(() => {
               const ch = this._channel();
-              if (ch && this.player) {
-                this.player.error(undefined); // Limpiar error anterior
-                this.loadChannel(ch);
-              }
-            }, 2000 * this.retryCount); // Backoff incremental
+              if (ch) this.loadChannel(ch);
+            }, 2000 * this.retryCount);
           } else {
-            this.error.set(`Error de reproducción (${error.code})`);
+            this.error.set(`Error de reproducción (código ${mediaError.code})`);
           }
         }
       });
     });
 
-    // Detectar pistas de audio cuando el stream carga
-    this.player.on('loadedmetadata', () => {
-      this.ngZone.run(() => this.detectAudioTracks());
-      // Reintentar detección con retardo (a veces los tracks se añaden después del metadata)
-      this.scheduleAudioDetection(1000);
-      this.scheduleAudioDetection(3000);
-      this.scheduleAudioDetection(5000);
-    });
-
-    // También detectar en canplay (backup)
-    this.player.on('canplay', () => {
-      this.ngZone.run(() => this.detectAudioTracks());
-    });
-
-    this.setupAudioTrackListeners();
+    // Controles auto-hide
+    video.addEventListener('mousemove', () => this.resetControlsTimeout());
+    video.addEventListener('click', () => this.togglePlayPause());
   }
 
   /**
-   * Configura listeners en AudioTrackList (se llama al iniciar y al cargar cada canal)
+   * Carga un canal HLS usando Hls.js o fallback nativo
    */
-  private setupAudioTrackListeners(): void {
-    if (!this.player) return;
-
-    const tracks = this.player.audioTracks();
-    if (tracks) {
-      const handler = () => this.ngZone.run(() => this.detectAudioTracks());
-      tracks.addEventListener('addtrack', handler);
-      tracks.addEventListener('removetrack', handler);
-      tracks.addEventListener('change', handler);
-    }
-  }
-
-  /**
-   * Programa una detección de audio con retardo
-   */
-  private scheduleAudioDetection(delayMs: number): void {
-    setTimeout(() => {
-      this.ngZone.run(() => this.detectAudioTracks());
-    }, delayMs);
-  }
-
   loadChannel(channel: Channel): void {
-    if (!this.player) return;
-
     // Cancelar reintento pendiente
     if (this.retryTimeout) {
       clearTimeout(this.retryTimeout);
       this.retryTimeout = undefined;
     }
 
-    // Resetear conteo de reintentos al cambiar de canal (no al reintentar)
+    // Resetear conteo de reintentos al cambiar de canal
     if (this._channel()?.id !== channel.id || this.retryCount === 0) {
       this.retryCount = 0;
     }
@@ -206,61 +137,220 @@ export class VideoPlayerComponent implements OnInit, OnDestroy, AfterViewInit {
     this.error.set(null);
     this.audioTracks.set([]);
     this.showAudioMenu.set(false);
+    this.lastDetectedTrackCount = -1;
 
-    // Pausar antes de cambiar fuente para evitar "play() interrupted"
-    this.player.pause();
+    const video = this.videoElement?.nativeElement;
+    if (!video) return;
 
-    let streamUrl = channel.streamUrl;
+    // Pausar antes de cambiar fuente
+    video.pause();
 
-    this.player.src({
-      src: streamUrl,
-      type: 'application/x-mpegURL'
-    });
+    const streamUrl = channel.streamUrl;
 
-    // Re-attach audio track listeners para el nuevo stream
-    this.setupAudioTrackListeners();
+    // Destruir instancia HLS previa
+    this.destroyHls();
 
-    // Esperar a que el player esté listo antes de reproducir
-    this.player.ready(() => {
-      // Pequeño delay para evitar conflictos de carga
-      setTimeout(() => {
-        if (this.player && !this.player.paused()) return; // Ya está reproduciendo
-        this.player?.play()?.catch((e: Error) => {
-          // Solo loguear si no es una interrupción por nueva carga
+    if (Hls.isSupported()) {
+      this.initHls(streamUrl, video);
+    } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+      // Safari nativo
+      video.src = streamUrl;
+      video.addEventListener('loadedmetadata', () => {
+        video.play().catch(e => {
           if (e.name !== 'AbortError') {
-            console.warn('[VIDEO-PLAYER] Autoplay prevented:', e.message);
+            console.warn('[PLAYER] Autoplay prevented:', e.message);
           }
         });
-      }, 100);
-    });
+      }, { once: true });
+    } else {
+      this.error.set('Tu navegador no soporta la reproducción HLS');
+    }
   }
 
   /**
-   * Detecta las pistas de audio disponibles en el stream
+   * Inicializa Hls.js con la configuración óptima
    */
-  private detectAudioTracks(): void {
-    if (!this.player) return;
+  private initHls(url: string, video: HTMLVideoElement): void {
+    this.hls = new Hls({
+      debug: false,
+      enableWorker: true,
+      lowLatencyMode: true,
+      backBufferLength: 90,
+      maxBufferLength: 30,
+      maxMaxBufferLength: 600,
+      startLevel: -1, // Auto ABR
+    });
 
-    const tracks: any = this.player.audioTracks();
-    if (!tracks || tracks.length === 0) {
-      this.audioTracks.set([]);
-      return;
-    }
+    const hls = this.hls;
 
-    const trackList: AudioTrackInfo[] = [];
-    for (let i = 0; i < tracks.length; i++) {
-      const track = tracks[i];
-      trackList.push({
-        id: i,
-        label: track.label || this.getTrackLabel(track.language, i),
-        language: track.language || '',
-        enabled: track.enabled
+    // ═══════════════════════════════════════════
+    // EVENTOS HLS
+    // ═══════════════════════════════════════════
+
+    hls.on(Hls.Events.MANIFEST_PARSED, (_event, data) => {
+      this.ngZone.run(() => {
+        console.log(`[HLS] Manifest parsed: ${data.levels.length} quality levels`);
+        // Intentar reproducir
+        video.play().catch(e => {
+          if (e.name !== 'AbortError') {
+            console.warn('[PLAYER] Autoplay prevented:', e.message);
+          }
+        });
+        // Detectar audio tracks del manifiesto
+        this.updateAudioTracks();
       });
-      if (track.enabled) {
-        this.activeAudioTrack.set(track.label || this.getTrackLabel(track.language, i));
-      }
+    });
+
+    // ═══════════════════════════════════════════
+    // AUDIO TRACKS — El core de Hls.js
+    // ═══════════════════════════════════════════
+
+    hls.on(Hls.Events.AUDIO_TRACKS_UPDATED, (_event, data) => {
+      this.ngZone.run(() => {
+        console.log(`[HLS] Audio tracks updated: ${data.audioTracks.length} tracks`);
+        this.updateAudioTracks();
+      });
+    });
+
+    hls.on(Hls.Events.AUDIO_TRACK_SWITCHED, (_event, data) => {
+      this.ngZone.run(() => {
+        console.log(`[HLS] Audio track switched to: ${data.id}`);
+        this.updateAudioTracks();
+      });
+    });
+
+    hls.on(Hls.Events.AUDIO_TRACK_LOADING, (_event, data) => {
+      console.log(`[HLS] Loading audio track: ${data.url}`);
+    });
+
+    // ═══════════════════════════════════════════
+    // QUALITY / LEVEL EVENTS
+    // ═══════════════════════════════════════════
+
+    hls.on(Hls.Events.LEVEL_SWITCHED, (_event, data) => {
+      console.log(`[HLS] Quality level switched to: ${data.level}`);
+    });
+
+    // ═══════════════════════════════════════════
+    // ERROR HANDLING
+    // ═══════════════════════════════════════════
+
+    hls.on(Hls.Events.ERROR, (_event, data) => {
+      this.ngZone.run(() => {
+        if (data.fatal) {
+          console.error(`[HLS] Fatal error: ${data.type} - ${data.details}`);
+          switch (data.type) {
+            case Hls.ErrorTypes.NETWORK_ERROR:
+              if (this.retryCount < this.MAX_RETRIES) {
+                this.retryCount++;
+                console.warn(`[HLS] Network error, retrying (${this.retryCount}/${this.MAX_RETRIES})...`);
+                hls.startLoad();
+              } else {
+                this.error.set('Error de red: no se puede cargar el stream');
+              }
+              break;
+            case Hls.ErrorTypes.MEDIA_ERROR:
+              console.warn('[HLS] Media error, attempting recovery...');
+              hls.recoverMediaError();
+              break;
+            default:
+              this.error.set(`Error fatal de reproducción`);
+              this.destroyHls();
+              break;
+          }
+        }
+      });
+    });
+
+    // Conectar a video y cargar
+    hls.attachMedia(video);
+    hls.loadSource(url);
+  }
+
+  /**
+   * Actualiza la lista de audio tracks desde Hls.js.
+   * Hls.js detecta audio tracks de:
+   * - #EXT-X-MEDIA:TYPE=AUDIO en el manifiesto HLS
+   * - Audio PIDs embebidos en segmentos MPEG-TS (demuxer interno)
+   * - Alternate audio renditions
+   */
+  private updateAudioTracks(): void {
+    if (!this.hls) return;
+
+    const hlsAudioTracks = this.hls.audioTracks;
+    const currentTrackId = this.hls.audioTrack;
+
+    if (hlsAudioTracks.length === this.lastDetectedTrackCount) return;
+    this.lastDetectedTrackCount = hlsAudioTracks.length;
+
+    if (hlsAudioTracks.length > 0) {
+      const trackList: AudioTrackInfo[] = hlsAudioTracks.map((track, index) => ({
+        id: track.id ?? index,
+        label: track.name || this.getTrackLabel(track.lang || '', index),
+        language: track.lang || '',
+        enabled: (track.id ?? index) === currentTrackId
+      }));
+
+      console.log(`[AUDIO] ${trackList.length} audio track(s) detectados:`);
+      trackList.forEach((t, i) =>
+        console.log(`[AUDIO]   [${i}] "${t.label}" lang="${t.language}" active=${t.enabled}`)
+      );
+
+      this.audioTracks.set(trackList);
+      const active = trackList.find(t => t.enabled);
+      if (active) this.activeAudioTrack.set(active.label);
+    } else {
+      // Fallback: comprobar audio tracks nativos del <video>
+      this.detectNativeAudioTracks();
     }
-    this.audioTracks.set(trackList);
+  }
+
+  /**
+   * Fallback: detecta audio tracks del elemento <video> nativo (Safari)
+   */
+  private detectNativeAudioTracks(): void {
+    const video = this.videoElement?.nativeElement;
+    if (!video) return;
+
+    const nativeTracks = (video as any).audioTracks;
+    if (nativeTracks && nativeTracks.length > 0) {
+      const trackList: AudioTrackInfo[] = [];
+      for (let i = 0; i < nativeTracks.length; i++) {
+        const t = nativeTracks[i];
+        trackList.push({
+          id: i,
+          label: t.label || this.getTrackLabel(t.language || '', i),
+          language: t.language || '',
+          enabled: t.enabled
+        });
+      }
+      if (trackList.length !== this.audioTracks().length) {
+        console.log(`[AUDIO] ${trackList.length} track(s) nativos detectados`);
+      }
+      this.audioTracks.set(trackList);
+    }
+  }
+
+  /**
+   * Cambia la pista de audio activa
+   */
+  selectAudioTrack(trackId: number): void {
+    if (!this.hls) return;
+
+    console.log(`[AUDIO] Cambiando a pista ${trackId}`);
+
+    // Hls.js: cambio directo por ID — así de simple
+    this.hls.audioTrack = trackId;
+
+    // Actualizar UI inmediatamente
+    const tracks = this.audioTracks();
+    const updatedTracks = tracks.map(t => ({ ...t, enabled: t.id === trackId }));
+    this.audioTracks.set(updatedTracks);
+
+    const active = updatedTracks.find(t => t.enabled);
+    if (active) this.activeAudioTrack.set(active.label);
+
+    this.showAudioMenu.set(false);
   }
 
   /**
@@ -275,6 +365,13 @@ export class VideoPlayerComponent implements OnInit, OnDestroy, AfterViewInit {
       'de': 'Deutsch', 'deu': 'Deutsch',
       'it': 'Italiano', 'ita': 'Italiano',
       'ca': 'Català', 'cat': 'Català',
+      'eu': 'Euskara', 'eus': 'Euskara',
+      'gl': 'Galego', 'glg': 'Galego',
+      'ja': '日本語', 'jpn': '日本語',
+      'ko': '한국어', 'kor': '한국어',
+      'zh': '中文', 'zho': '中文',
+      'ar': 'العربية', 'ara': 'العربية',
+      'ru': 'Русский', 'rus': 'Русский',
       'und': 'Pista ' + (index + 1),
       '': 'Pista ' + (index + 1)
     };
@@ -282,32 +379,53 @@ export class VideoPlayerComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   /**
-   * Cambia la pista de audio activa
+   * Destruye la instancia HLS limpiamente
    */
-  selectAudioTrack(trackId: number): void {
-    if (!this.player) return;
-
-    const tracks: any = this.player.audioTracks();
-    if (!tracks) return;
-
-    for (let i = 0; i < tracks.length; i++) {
-      tracks[i].enabled = (i === trackId);
+  private destroyHls(): void {
+    if (this.hls) {
+      this.hls.destroy();
+      this.hls = undefined;
     }
-
-    this.detectAudioTracks();
-    this.showAudioMenu.set(false);
   }
 
-  /**
-   * Toggle del menú de audio
-   */
+  // ═══════════════════════════════════════════
+  // CONTROLES DE REPRODUCCIÓN
+  // ═══════════════════════════════════════════
+
+  togglePlayPause(): void {
+    const video = this.videoElement?.nativeElement;
+    if (!video) return;
+
+    if (video.paused) {
+      video.play().catch(e => {
+        if (e.name !== 'AbortError') {
+          console.warn('[PLAYER] Play prevented:', e.message);
+        }
+      });
+    } else {
+      video.pause();
+    }
+  }
+
+  private resetControlsTimeout(): void {
+    this.showControls.set(true);
+    if (this.controlsTimeout) clearTimeout(this.controlsTimeout);
+    this.controlsTimeout = setTimeout(() => {
+      const video = this.videoElement?.nativeElement;
+      if (video && !video.paused) {
+        this.showControls.set(false);
+      }
+    }, 3000);
+  }
+
+  // ═══════════════════════════════════════════
+  // AUDIO MENU UI
+  // ═══════════════════════════════════════════
+
   toggleAudioMenu(): void {
     this.showAudioMenu.update(v => !v);
   }
 
-  /**
-   * Cierra el menú de audio
-   */
   closeAudioMenu(): void {
     this.showAudioMenu.set(false);
   }

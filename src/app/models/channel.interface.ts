@@ -169,7 +169,7 @@ export interface LoadingState {
 export interface AppConfig {
   proxyUrl?: string;
   enableCorsProxy: boolean;
-  videoPlayerType: 'videojs' | 'hlsjs';
+  videoPlayerType: 'hlsjs';
   autoplay: boolean;
   volume: number;
 }

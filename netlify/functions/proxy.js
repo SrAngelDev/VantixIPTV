@@ -108,7 +108,7 @@ exports.handler = async function (event) {
     if (isHLS) {
       const text = await response.text();
 
-      const modifiedText = text.replace(/^(?!#)(\S+)/gm, (match) => {
+      let modifiedText = text.replace(/^(?!#)(\S+)/gm, (match) => {
         // Prevenir bucles
         if (match.includes('.netlify/functions/proxy')) return match;
 
@@ -117,6 +117,17 @@ exports.handler = async function (event) {
           return `${proxyBaseUrl}?url=${encodeURIComponent(absoluteUrl)}`;
         } catch (e) {
           return match;
+        }
+      });
+
+      // Reescribir URIs dentro de tags HLS (#EXT-X-MEDIA, #EXT-X-MAP, etc.)
+      modifiedText = modifiedText.replace(/URI="([^"]+)"/gi, (fullMatch, uri) => {
+        if (uri.includes('.netlify/functions/proxy')) return fullMatch;
+        try {
+          const absoluteUrl = new URL(uri, responseUrl).href;
+          return `URI="${proxyBaseUrl}?url=${encodeURIComponent(absoluteUrl)}"`;
+        } catch {
+          return fullMatch;
         }
       });
 

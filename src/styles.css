@@ -1,7 +1,6 @@
 @import "tailwindcss";
 
-/* Video.js Styles */
-@import 'video.js/dist/video-js.css';
+/* HLS Player — no external CSS needed */
 
 /* ============================================
    VANTIX IPTV — Global Styles

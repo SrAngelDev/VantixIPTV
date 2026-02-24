@@ -107,7 +107,7 @@ export default async function handler(request) {
       const text = await response.text();
 
       // Reescribir URLs de segmentos/playlists para que pasen por el proxy
-      const modified = text.replace(/^(?!#)(\S+)/gm, (match) => {
+      let modified = text.replace(/^(?!#)(\S+)/gm, (match) => {
         if (match.includes('/api/proxy') || match.includes('.netlify/functions/proxy')) {
           return match;
         }
@@ -116,6 +116,19 @@ export default async function handler(request) {
           return `${proxyBaseUrl}?url=${encodeURIComponent(absoluteUrl)}`;
         } catch {
           return match;
+        }
+      });
+
+      // Reescribir URIs dentro de tags HLS (#EXT-X-MEDIA, #EXT-X-MAP, #EXT-X-I-FRAME-STREAM-INF, etc.)
+      modified = modified.replace(/URI="([^"]+)"/gi, (fullMatch, uri) => {
+        if (uri.includes('/api/proxy') || uri.includes('.netlify/functions/proxy')) {
+          return fullMatch;
+        }
+        try {
+          const absoluteUrl = new URL(uri, finalUrl).href;
+          return `URI="${proxyBaseUrl}?url=${encodeURIComponent(absoluteUrl)}"`;
+        } catch {
+          return fullMatch;
         }
       });
 

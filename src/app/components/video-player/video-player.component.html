@@ -1,9 +1,11 @@
 <div class="video-container">
   <!-- Video Element -->
-  <video 
-    #videoElement 
-    class="video-js vjs-big-play-centered vjs-16-9"
-    playsinline>
+  <video
+    #videoElement
+    class="hls-video"
+    playsinline
+    controls
+    autoplay>
   </video>
 
   <!-- Loading Overlay -->
@@ -35,17 +37,18 @@
   }
 
   <!-- Audio Track Selector -->
-  @if (hasMultipleAudioTracks() && !error()) {
-    <div class="audio-track-panel" [class.open]="showAudioMenu()">
+  @if (channel && !error()) {
+    <div class="audio-track-panel" [class.open]="showAudioMenu()" [class.has-tracks]="hasMultipleAudioTracks()">
       <!-- Toggle Button -->
-      <button class="audio-toggle-btn" (click)="toggleAudioMenu()" title="Cambiar audio">
+      <button class="audio-toggle-btn" [class.single-track]="!hasMultipleAudioTracks()" (click)="toggleAudioMenu()" title="Pistas de audio">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
-          <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-          <line x1="12" y1="19" x2="12" y2="23"/>
-          <line x1="8" y1="23" x2="16" y2="23"/>
+          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+          <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+          <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
         </svg>
-        <span class="audio-badge">{{ audioTracks().length }}</span>
+        @if (hasMultipleAudioTracks()) {
+          <span class="audio-badge">{{ audioTracks().length }}</span>
+        }
       </button>
 
       <!-- Audio Menu -->
@@ -53,31 +56,42 @@
         <div class="audio-menu" (mouseleave)="closeAudioMenu()">
           <div class="audio-menu-header">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
-              <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+              <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
             </svg>
             <span>Pistas de Audio</span>
           </div>
           <div class="audio-menu-list">
-            @for (track of audioTracks(); track track.id) {
-              <button 
-                class="audio-track-item" 
-                [class.active]="track.enabled"
-                (click)="selectAudioTrack(track.id)">
-                <span class="track-indicator">
-                  @if (track.enabled) {
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-                    </svg>
-                  } @else {
-                    <span class="track-dot"></span>
+            @if (audioTracks().length > 1) {
+              @for (track of audioTracks(); track track.id) {
+                <button 
+                  class="audio-track-item" 
+                  [class.active]="track.enabled"
+                  (click)="selectAudioTrack(track.id)">
+                  <span class="track-indicator">
+                    @if (track.enabled) {
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                      </svg>
+                    } @else {
+                      <span class="track-dot"></span>
+                    }
+                  </span>
+                  <span class="track-label">{{ track.label }}</span>
+                  @if (track.language) {
+                    <span class="track-lang">{{ track.language.toUpperCase() }}</span>
                   }
-                </span>
-                <span class="track-label">{{ track.label }}</span>
-                @if (track.language) {
-                  <span class="track-lang">{{ track.language.toUpperCase() }}</span>
-                }
-              </button>
+                </button>
+              }
+            } @else {
+              <div class="audio-no-tracks">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"/>
+                  <line x1="12" y1="16" x2="12" y2="12"/>
+                  <line x1="12" y1="8" x2="12.01" y2="8"/>
+                </svg>
+                <span>Este canal solo tiene una pista de audio</span>
+              </div>
             }
           </div>
         </div>
